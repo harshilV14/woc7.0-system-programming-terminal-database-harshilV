@@ -1,105 +1,81 @@
 import os
 import json
-def createDatabase(database_name):
-    file_name = f"{database_name}.json"
-    if os.path.exists(file_name):
-        return f" '{database_name}' already exists"
-    with open(file_name, 'w') as db_file:
-        json.dump({}, db_file)
-    return f"Database {database_name} created ."
 
-def listDatabases():
-    databases = [f for f in os.listdir() if f.endswith('.json')]
-    return databases if databases else "No database found"
+class DatabaseManager:
+    def __init__(self):
+        self.current_database = None
 
-def accessDatabase(database_name):
-    file_name = f"{database_name}.json"
-    if os.path.exists(file_name):
-        return file_name
-    return f"Database {database_name} does not exist"
+     def createDatabase(self, databaseName):
+        file_name = f"{databaseName}.json"
+        if os.path.exists(file_name):
+            return f"Database {databaseName} already exists."
+        with open(file_name, 'w') as dbFile:
+            json.dump({}, dbFile)
+        return f"Database {databaseName} created."
 
-def createTable(database_name, tableName):
-    file_name = f"{database_name}.json"
-    if not os.path.exists(file_name):
-        return f"Database {database_name} does not exist"
-    with open(file_name, 'r+') as dbFile:
-        data = json.load(dbFile)
-        if tableName in data:
-            return f"Table {tableName} already exist"
-        data[table_name] = []
-        dbFile.seek(0)
-        json.dump(data, dbFile, indent=4)
-    return f"Table {tableName} created"
+    def listDatabases(self):
+        databases = [f for f in os.listdir() if f.endswith('.json')]
+        return databases if databases else "No databases found."
 
-def listAllTables(database_name):
-    file_name = f"{database_name}.json"
-    if not os.path.exists(file_name):
-        return f"Database {database_name} does not exist"
-    with open(file_name, 'r+') as dbFile:
-        data = json.load(dbFile)
-    return list(data.keys()) if data else "No table found."
+    def useDatabase(self, databaseName):
+        file_name = f"{databaseName}.json"
+        if not os.path.exists(file_name):
+            return f"Database {databaseName} does not exist."
+        self.current_database = databaseName
+        return f"Using database: {databaseName}"
 
-def insertEntry(database_name, tableName, entry):
-    file_name = f"{database_name}.json"
-    if not os.path.exists(file_name):
-        return f"Database {database_name} does not exist"
-    with open(file_name, 'r+') as dbFile:
-        data = json.load(dbFile)
-        if tableName not in data:
-            return f"{tableName} does not exist"
-        primaryKey = list(data.keys())[0]
-        if any(row.get(primaryKey) == entry[primaryKey] for row in data[tableName]):
-            return f"Primary Key {primaryKey} must be unique"
-        data[tableName].append(entry)
-        dbFile.seek(0)
-        json.dump(data, dbFile, indent=4)
-    return f"Entry added to {tableName}"
+    def createTable(self, tableName):
+        if not self.current_database:
+            return "No database selected. Use USE DATABASE <databaseName> first."
+        file_name = f"{self.currentDatabase}.json"
+        with open(file_name, 'r+') as dbFile:
+            data = json.load(dbFile)
+            if tableName in data:
+                return f"Table {tableName} already exists."
+            data[tableName] = []
+            dbFile.seek(0)
+            json.dump(data, dbFile, indent=4)
+        return f"Table {tableName} created successfully."
 
-def readTable(database_name, tableName):
-    file_name = f"{database_name}.json"
-    if not os.path.exists(file_name):
-        return f"Database {database_name} does not exist"
-    with open(file_name, 'r') as dbFile:
-        data = json.load(dbFile)
-        if tableName not in data:
-            return f"Table {tableName} does not exist"
-    return data[tableName]
+    def insertEntry(self, tableName, entry):
+        if not self.current_database:
+            return "No database selected. Use USE DATABASE <databaseName> first."
+        file_name = f"{self.current_database}.json"
+        with open(file_name, 'r+') as dbFile:
+            data = json.load(dbFile)
+            if tableName not in data:
+                return f"Table {tableName} does not exist."
+            primaryKey = list(entry.keys())[0]
+            if any(row.get(primaryKey) == entry[primaryKey] for row in data[tableName]):
+                return f"Primary key {primaryKey} must be unique."
+            data[tableName].append(entry)
+            dbFile.seek(0)
+            json.dump(data, dbFile, indent=4)
+        return f"Entry added to table {tableName}."
 
-def updateTableEntry(database_name, tableName, primaryKey, updates):
-    file_name = f"{database_name}.json"
-    if not os.path.exists(file_name):
-        return f"Database {database_name} does not exist"
-    with open(file_name, 'r') as dbFile:
-        data = json.load(dbFile)
-        if tableName not in data:
-            return f"Table {tableName} does not exist"
-        for row in data[tableName]:
-            if row.get(primaryKey):
-                row.update(updates)
-                dbFile.seek(0)
-                json.dump(data, dbFile, indent=4)
-                return f"Entry with{primaryKey} updated"
-        return f"No entry with {primaryKey} found"
+    def listEntries(self, tableName):
+        if not self.current_database:
+            return "No database selected. Use USE DATABASE <database_name> first."
+        file_name = f"{self.current_database}.json"
+        with open(file_name, 'r') as dbFile:
+            data = json.load(dbFile)
+            if tableName not in data:
+                return f"Table {tableName} does not exist."
+        return data[tableName] if data[tableName] else f"No entries in table {tableName}."
 
-def deleteEntry(database_name, tableName, primaryKey):
-    file_name = f"{database_name}.json"
-    if not os.path.exists(file_name):
-        return f"Database {database_name} does not exist"
-    with open(file_name, 'r') as dbFile:
-        data = json.load(dbFile)
-        if tableName not in data:
-            return f"Table {tableName} does not exist"
-        data[tableName] = [row for row in data[tableName] if row.get(primaryKey) != primaryKey]
-        dbFile.seek(0)
-        json.dump(data, dbFile, indent = 4)
-    return f"Entry with {primaryKey} deleted"
-
-def listAllEnteries(database_name, tableName):
-    file_name = f"{database_name}.json"
-    if not os.path.exists(file_name):
-        return f"Database {database_name} does not exist"
-    with open(file_name, 'r') as dbFile:
-        data = json.load(dbFile)
-        if tableName not in data:
-            return f"Table {tableName} does not exist"
-    return data[tableName] if data[tableName] else f"No entries in table {tableName}"
+    def deleteEntry(self, tableName, value):
+        if not self.current_database:
+            return "No database selected. Use USE DATABASE <databaseName> first."
+        file_name = f"{self.current_database}.json"
+        with open(file_name, 'r+') as dbFile:
+            data = json.load(dbFile)
+            if tableName not in data:
+                return f"Table {tableName} does not exist."
+            cnt = len(data[tableName])
+            data[tableName] = [entry for entry in data[tableName] if entry.get("id") != value
+            if len(data[tableName]) == cnt:
+                return f"Entry with primary key {value} not found."
+            dbFile.seek(0)
+            json.dump(data, dbFile, indent=4)
+            dbFile.truncate()
+        return f"Entry with primary key {value} deleted from table {tableName}."
