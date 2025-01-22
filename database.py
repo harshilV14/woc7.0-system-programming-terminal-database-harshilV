@@ -1,21 +1,30 @@
 import os
 import json
 
+
 class DatabaseManager:
     def __init__(self):
         self.current_database = None
 
-     def createDatabase(self, databaseName):
+    def createDatabase(self, databaseName):
         file_name = f"{databaseName}.json"
         if os.path.exists(file_name):
             return f"Database {databaseName} already exists."
-        with open(file_name, 'w') as dbFile:
+        with open(file_name, "w") as dbFile:
             json.dump({}, dbFile)
         return f"Database {databaseName} created."
-
+    
     def listDatabases(self):
         databases = [f for f in os.listdir() if f.endswith('.json')]
         return databases if databases else "No databases found."
+
+    def listTables(self):
+        if not self.current_database:
+            return "No database selected. Use USE DATABASE <databaseName> first."
+        file_name = f"{self.current_database}.json"
+        with open(file_name, "r") as dbFile:
+            data = json.load(dbFile)
+        return list(data.keys()) if data else ["No tables found."]
 
     def useDatabase(self, databaseName):
         file_name = f"{databaseName}.json"
@@ -27,8 +36,8 @@ class DatabaseManager:
     def createTable(self, tableName):
         if not self.current_database:
             return "No database selected. Use USE DATABASE <databaseName> first."
-        file_name = f"{self.currentDatabase}.json"
-        with open(file_name, 'r+') as dbFile:
+        file_name = f"{self.current_database}.json"
+        with open(file_name, "r+") as dbFile:
             data = json.load(dbFile)
             if tableName in data:
                 return f"Table {tableName} already exists."
@@ -41,7 +50,7 @@ class DatabaseManager:
         if not self.current_database:
             return "No database selected. Use USE DATABASE <databaseName> first."
         file_name = f"{self.current_database}.json"
-        with open(file_name, 'r+') as dbFile:
+        with open(file_name, "r+") as dbFile:
             data = json.load(dbFile)
             if tableName not in data:
                 return f"Table {tableName} does not exist."
@@ -55,25 +64,29 @@ class DatabaseManager:
 
     def listEntries(self, tableName):
         if not self.current_database:
-            return "No database selected. Use USE DATABASE <database_name> first."
+            return "No database selected. Use USE DATABASE <databaseName> first."
         file_name = f"{self.current_database}.json"
-        with open(file_name, 'r') as dbFile:
+        with open(file_name, "r") as dbFile:
             data = json.load(dbFile)
             if tableName not in data:
                 return f"Table {tableName} does not exist."
-        return data[tableName] if data[tableName] else f"No entries in table {tableName}."
+        return (
+            data[tableName] if data[tableName] else f"No entries in table {tableName}."
+        )
 
     def deleteEntry(self, tableName, value):
         if not self.current_database:
             return "No database selected. Use USE DATABASE <databaseName> first."
         file_name = f"{self.current_database}.json"
-        with open(file_name, 'r+') as dbFile:
+        with open(file_name, "r+") as dbFile:
             data = json.load(dbFile)
             if tableName not in data:
                 return f"Table {tableName} does not exist."
-            cnt = len(data[tableName])
-            data[tableName] = [entry for entry in data[tableName] if entry.get("id") != value
-            if len(data[tableName]) == cnt:
+            original_length = len(data[tableName])
+            data[tableName] = [
+                entry for entry in data[tableName] if entry.get("id") != value
+            ]
+            if len(data[tableName]) == original_length:
                 return f"Entry with primary key {value} not found."
             dbFile.seek(0)
             json.dump(data, dbFile, indent=4)
