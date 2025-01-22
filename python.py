@@ -28,8 +28,26 @@ def main():
             break
         execute_cmd(command)
 
-def execute_cmd(command):
-    print("Cnd not implemented")
+        set_key_value(parts[1], parts[2])
+
+def execute_command(command):
+    parts = command.split()    # to get CMD from the user  
+    if not parts:              # and split to get CMD,
+        return                 # key and value if required
+
+    cmd = parts[0].upper()
+    if cmd == "SET" and len(parts) == 3:
+        set_key_value(parts[1], parts[2])
+    elif cmd == "GET" and len(parts) == 2:
+        get_value(parts[1])
+    elif cmd == "DELETE" and len(parts) == 2:
+        delete_key(parts[1])
+    elif cmd == "LIST":
+        list_keys()
+    elif cmd == "CLEAR":
+        clear_database()
+    else:
+        print("Invalid Command / Check Syntax ")
 
 if __name__ == "__main__":
     main()
